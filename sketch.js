@@ -3,7 +3,12 @@ const tileImages = [];
 
 let grid = [];
 
-const DIM = 25;
+const DIM = 64;
+
+let needs_restart = false;
+let prev_cell_collapsed = null;
+let collapsed = [];
+let backtrack_counter = {}
 
 function preload() {
   // const path = 'rail';
@@ -27,7 +32,7 @@ function removeDuplicatedTiles(tiles) {
 }
 
 function setup() {
-  createCanvas(400, 400);
+  createCanvas(1000, 1000);
   //randomSeed(15);
 
   // tiles[0] = new Tile(tileImages[0], ['AAA', 'AAA', 'AAA', 'AAA']);
@@ -66,7 +71,7 @@ function setup() {
     tempTiles = removeDuplicatedTiles(tempTiles);
     tiles = tiles.concat(tempTiles);
   }
-  console.log(tiles.length);
+  // console.log(tiles.length);
 
   // Generate the adjacency rules based on edges
   for (let i = 0; i < tiles.length; i++) {
@@ -78,9 +83,12 @@ function setup() {
 }
 
 function startOver() {
+  collapsed = []
+  backtrack_counter = {}
+  needs_restart = false;
   // Create cell for each spot on the grid
   for (let i = 0; i < DIM * DIM; i++) {
-    grid[i] = new Cell(tiles.length);
+    grid[i] = new Cell(tiles.length, i);
   }
 }
 
@@ -96,12 +104,23 @@ function checkValid(arr, valid) {
       arr.splice(i, 1);
     }
   }
+  return arr;
   // console.log(arr);
   // console.log("----------");
 }
 
 function mousePressed() {
-  redraw();
+  if(mouseButton!==LEFT){
+    return;
+  }
+  if(isLooping()){
+      noLoop();
+  }else{
+    if(needs_restart){
+      startOver();
+    }
+    loop();
+  }
 }
 
 function draw() {
@@ -117,7 +136,11 @@ function draw() {
         image(tiles[index].img, i * w, j * h, w, h);
       } else {
         noFill();
-        stroke(51);
+        if(cell.no_pick){
+          stroke(255, 204, 0);
+        }else{
+          stroke(33);
+        }
         rect(i * w, j * h, w, h);
       }
     }
@@ -147,13 +170,91 @@ function draw() {
 
   if (stopIndex > 0) gridCopy.splice(stopIndex);
   const cell = random(gridCopy);
-  cell.collapsed = true;
   const pick = random(cell.options);
   if (pick === undefined) {
-    startOver();
-    return;
+    backtrack_counter[cell.index] = backtrack_counter?.[cell.index] ? backtrack_counter[cell.index]+1 : 1;
+    // startOver();
+    // console.log(`no pick for ${cell.index}, back track to ${prev_cell_collapsed}`);
+
+    /* Hard Stop */
+    // needs_restart = true;
+    // cell.no_pick = true;
+    // noLoop();
+    // // draw();
+    // return;
+
+    /* Back Track */
+    const BT_THRESHOLD = 9;
+    let backtrack_i = -1;
+    let backtrack = true
+    while(backtrack && backtrack_i < collapsed.length){
+      backtrack_i++;
+      if(!collapsed.length){
+        needs_restart = true;
+        backtrack = false;
+        continue;
+      }
+      let prev_c_index = collapsed.length - backtrack_i;
+      if(prev_c_index >= collapsed.length){
+        prev_c_index = collapsed.length - 1;
+      }
+      if(prev_c_index < 0){
+        prev_c_index = 0;
+      }
+
+      let prev_index = collapsed?.[prev_c_index];
+      let prev_cell = grid?.[prev_index];
+      if(!prev_cell){
+        console.warn('not found',{prev_index,backtrack_i,c_len:collapsed.length})
+        backtrack = false;
+        continue;
+      }
+      if(prev_cell){
+        console.log('backtracking ', {
+          backtrack_i,
+          index:prev_cell.index,
+          num_retries:backtrack_counter?.[prev_cell.index], 
+          num_collapsed:collapsed.length
+        })
+        grid[prev_cell.index].collapsed = false;
+        grid[prev_cell.index].options = new Array(tiles.length).fill(0).map((x, i) => i);
+
+        backtrack_counter[prev_cell.index] = backtrack_counter?.[prev_cell.index] ? backtrack_counter[prev_cell.index]+1 : 1
+        
+        if(backtrack_counter[prev_cell.index] < BT_THRESHOLD){
+          backtrack = false; // break loop if this cell hasn't been retried a bunch
+          continue;
+        }
+        
+        let in_c_arr = collapsed.indexOf(prev_cell.index)
+        if(in_c_arr > -1){
+          collapsed.splice(in_c_arr,1);
+        }
+      }
+    }
+    // debugger;
+    cell.options = new Array(tiles.length).fill(0).map((x, i) => i);
+    grid[cell.index].collapsed = false;
+    let in_c_arr = collapsed.indexOf(cell.index)
+    if(in_c_arr > -1){
+      collapsed.splice(in_c_arr,1);
+    }
+    //return;
+  }else{
+    cell.collapsed = true;
+    prev_cell_collapsed = cell.index;
+    collapsed.push(cell.index);
+    cell.options = [pick];
+    // why is this diverging???
+    // let actual = grid.filter(v => v.collapsed);
+    // console.log(collapsed.length, actual.length);
+    // if(collapsed.length != actual.length){
+    //   let difference = collapsed
+    //              .filter(x => !actual.includes(x));
+    //   let diff2 = actual.filter(x => !collapsed.includes(x))
+    //   debugger;
+    // }
   }
-  cell.options = [pick];
 
   const nextGrid = [];
   for (let j = 0; j < DIM; j++) {
@@ -162,16 +263,40 @@ function draw() {
       if (grid[index].collapsed) {
         nextGrid[index] = grid[index];
       } else {
+        // if ZERO adjacent cells are collapsed, skip for now...
+        let at_least_one_collapsed = false;
+        for(neighbor of [
+          j > 0 ? grid[i + (j - 1) * DIM] : null, // up
+          i < DIM - 1 ? grid[i + 1 + j * DIM] : null, // right
+          j < DIM - 1 ? grid[i + (j + 1) * DIM] : null, // down
+          i > 0 ? grid[i - 1 + j * DIM] : null // left
+        ]){
+            if(neighbor?.collapsed){
+              at_least_one_collapsed = true;
+            }
+        }
+        if(!at_least_one_collapsed){
+          nextGrid[index] = grid[index];
+          continue;
+        }
         let options = new Array(tiles.length).fill(0).map((x, i) => i);
         // Look up
         if (j > 0) {
           let up = grid[i + (j - 1) * DIM];
           let validOptions = [];
+          // let ogValidOptions = [];
           for (let option of up.options) {
             let valid = tiles[option].down;
-            validOptions = validOptions.concat(valid);
+            // pre-filter dupes
+            for(let presumed_valid of valid){
+                if(!validOptions.includes(presumed_valid)){
+                    validOptions.push(presumed_valid);
+                }
+            }
+            // ogValidOptions = ogValidOptions.concat(valid);
           }
-          checkValid(options, validOptions);
+          // console.log('compare', {ogValidOptions, validOptions})
+          options = checkValid(options, validOptions);
         }
         // Look right
         if (i < DIM - 1) {
@@ -179,9 +304,13 @@ function draw() {
           let validOptions = [];
           for (let option of right.options) {
             let valid = tiles[option].left;
-            validOptions = validOptions.concat(valid);
+            for(let presumed_valid of valid){
+                if(!validOptions.includes(presumed_valid)){
+                    validOptions.push(presumed_valid);
+                }
+            }
           }
-          checkValid(options, validOptions);
+          options = checkValid(options, validOptions);
         }
         // Look down
         if (j < DIM - 1) {
@@ -189,9 +318,13 @@ function draw() {
           let validOptions = [];
           for (let option of down.options) {
             let valid = tiles[option].up;
-            validOptions = validOptions.concat(valid);
+            for(let presumed_valid of valid){
+                if(!validOptions.includes(presumed_valid)){
+                    validOptions.push(presumed_valid);
+                }
+            }
           }
-          checkValid(options, validOptions);
+          options = checkValid(options, validOptions);
         }
         // Look left
         if (i > 0) {
@@ -199,13 +332,21 @@ function draw() {
           let validOptions = [];
           for (let option of left.options) {
             let valid = tiles[option].right;
-            validOptions = validOptions.concat(valid);
+            for(let presumed_valid of valid){
+                if(!validOptions.includes(presumed_valid)){
+                    validOptions.push(presumed_valid);
+                }
+            }
           }
-          checkValid(options, validOptions);
+          options = checkValid(options, validOptions);
         }
 
         // I could immediately collapse if only one option left?
-        nextGrid[index] = new Cell(options);
+        nextGrid[index] = new Cell(options, index);
+        // if(options.length === 1){
+        //   nextGrid[index].collapsed = true;
+        //   collapsed.push(index);
+        // }
       }
     }
   }
