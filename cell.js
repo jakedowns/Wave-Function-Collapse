@@ -3,7 +3,7 @@ class Cell {
     this.index = index;
     this.row = row;
     this.col = col;
-    
+
     this.collapsed = false;
     if (value instanceof Array) {
       this.options = value.slice();
@@ -32,15 +32,27 @@ class Cell {
     }
   }
   get UP(){
-    return grid[this.col + ((this.row + DIM - 1) % DIM) * DIM]
+    if(!WRAP_AROUND && this.row === 0){
+      return null;
+    }
+    return grid[this.col + ((this.row - 1) % DIM) * DIM]
   }
   get RIGHT(){
+    if(!WRAP_AROUND && this.col === DIM - 1){
+      return null;
+    }
     return grid[(this.col + 1) % DIM + this.row * DIM]
   }
   get DOWN(){
+    if(!WRAP_AROUND && this.row === DIM - 1){
+      return null;
+    }
     return grid[this.col + ((this.row + 1) % DIM) * DIM]
   }
   get LEFT(){
-    return grid[((this.col + DIM - 1) % DIM) + this.row * DIM]
+    if(!WRAP_AROUND && this.col === 0){
+      return null;
+    }
+    return grid[((this.col + DIM) % DIM) + this.row * DIM]
   }
 }

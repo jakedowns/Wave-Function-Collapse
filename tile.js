@@ -9,19 +9,23 @@ function compareEdge(a, b) {
 }
 
 class Tile {
-  constructor(imgID, edges, i, newImg) {
+  constructor(imgID, edges, corners, newImg) {
     this.imgID = imgID;
     this.rotated_num = 0;
     this.img = newImg ?? tileImages[imgID];
     this.edges = edges;
+    this.corners = corners;
+
     this.up = [];
     this.right = [];
     this.down = [];
     this.left = [];
 
-    if (i !== undefined) {
-      this.index = i;
-    }
+    // corners
+    this.UR = [];
+    this.DR = [];
+    this.DL = [];
+    this.UL = [];
   }
 
   analyze(tiles) {
@@ -31,9 +35,13 @@ class Tile {
     for (let i = 0; i < tiles.length; i++) {
       let tile = tiles[i];
 
-      if (_loops_curves.includes(tile.imgID) && _loops_curves.includes(this.imgID)) continue;
-      if (_4_ways.includes(tile.imgID) && _4_ways.includes(this.imgID)) continue;
-      if (_splits.includes(tile.imgID) && _splits.includes(this.imgID)) continue;
+      // if(this.imgID === tile.imgID) {
+      //   continue;
+      // }
+
+      // if (_loops_curves.includes(tile.imgID) && _loops_curves.includes(this.imgID)) continue;
+      // if (_4_ways.includes(tile.imgID) && _4_ways.includes(this.imgID)) continue;
+      // if (_splits.includes(tile.imgID) && _splits.includes(this.imgID)) continue;
 
       // allow tile 0 to connect to any tile
       // this.up.push(0)
@@ -45,6 +53,10 @@ class Tile {
       //   console.error('huh');
       //   debugger;
       // }
+
+      if(this.imgID === 4 && tile.imgID !== 0){
+        continue;
+      }
 
       // UP
       if (compareEdge(tile.edges[2], this.edges[0])) {
@@ -62,6 +74,13 @@ class Tile {
       if (compareEdge(tile.edges[1], this.edges[3])) {
         this.left.push(i);
       }
+
+      if(this.corners || tile.corners){
+        
+      }
+    }
+    if(this.imgID === 5){
+      console.warn('did tile 5 have down options at analyze time?', this.down.slice());
     }
   }
 
@@ -80,6 +99,12 @@ class Tile {
     for (let i = 0; i < len; i++) {
       newEdges[i] = this.edges[(i - num + len) % len];
     }
-    return new Tile(this.imgID, newEdges, this.index, newImg);
+    let newCorners = null;
+    if(this.corners){
+      for(let i = 0; i < this.corners.len; i++){
+        newCorners[i] = this.corners[(i - num + len) % len];
+      }
+    }
+    return new Tile(this.imgID, newEdges, newCorners, newImg);
   }
 }

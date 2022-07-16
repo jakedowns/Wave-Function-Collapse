@@ -8,11 +8,25 @@
       body {
         background-color: #555;
       }
+      button {
+        font-size: 20px;
+      }
     </style>
   </head>
 
   <body>
     <button onclick="startOver();">restart</button>
+    <label>TileSet</label>
+    <select id="tileset-picker">
+      <option selected value="plant">Plant</option>
+      <option value="squiggles">Squiggles</option>
+    </select>
+    <label for="">tile size</label>
+    <input type="number" step="2" min="4" max="256" id="tile-size" value="16" />
+    <label for="">delay</label>
+    <input type="number" step="1" min="0" max="10" id="delay" value="0" />
+    <label for="">seamless mode</label>
+    <input type="checkbox" id="seamless" />
     <main></main>
     <script src="tile.js"></script>
     <script src="cell.js"></script>
