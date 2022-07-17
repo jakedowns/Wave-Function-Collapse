@@ -11,7 +11,7 @@ let IS_BACKTRACKING = false
 let backtrack_started_at = null
 let collapsed_at_backtrack_start = null;
 let latest_uncollapsed_cell = null;
-
+let SHOW_NUMS = false
 let SHOW_ENTROPY = false;
 
 // seamless mode
@@ -59,6 +59,13 @@ document.getElementById('seamless').addEventListener('change', function(event) {
   WRAP_AROUND = event.target.checked;
   localStorage.setItem('seamless', WRAP_AROUND);
   startOver();
+});
+
+document.getElementById('debug').addEventListener('change', function(event) {
+  // debug = event.target.checked;
+  SHOW_NUMS = event.target.checked;
+  // localStorage.setItem('debug', debug);
+  // startOver();
 });
 
 document.getElementById('set_selector').addEventListener('change', function(event) {
@@ -111,10 +118,20 @@ function removeDuplicatedTiles(tiles) {
   return Object.values(uniqueTilesMap);
 }
 
+function preload(){
+  for(let set_key of Object.keys(tile_sets)){
+    let set = tile_sets[set_key];
+    set.tileImages = [];
+    for(let i = 0; i <= set.max_id; i++){
+      set.tileImages[i] = loadImage(`tiles/${set.path}${i}.png`);
+    }
+  }
+}
+
 function loadTiles(){
   tiles = [];
-  tileImages = [];
-  loadTileImages();
+  tileImages = selected_set.tileImages;
+
   console.log('loading tiles',selected_set_key);
   switch(selected_set_key){
     case 'plants':
@@ -169,12 +186,12 @@ function loadTiles(){
   }
 }
 
-function loadTileImages(){
-  const path = `tiles/${selected_set.path}`;
-  for (let i = 0; i <= selected_set.max_id; i++) {
-    tileImages[i] = loadImage(`${path}${i}.png`);
-  }
-}
+// function loadTileImages(){
+//   const path = `tiles/${selected_set.path}`;
+//   for (let i = 0; i <= selected_set.max_id; i++) {
+//     tileImages[i] = loadImage(`${path}${i}.png`);
+//   }
+// }
 
 let seed = 1;
 function setup() {
@@ -589,9 +606,9 @@ function pickLowestEntropyRandomCell(cells){
     return a.options.length - b.options.length;
   });
 
-  if(typeof(gridCopy) === "undefined"){
-    debugger;
-  }
+  // if(typeof(gridCopy) === "undefined"){
+  //   debugger;
+  // }
   if(!gridCopy.length){
     return;
   }
@@ -902,40 +919,46 @@ function draw() {
   // debugger;
   background(0);
   let textColor = color(255,0,0)
-  textColor.setAlpha(parseInt(255*.5))
+  // textColor.setAlpha(parseInt(255*.5))
   for (let j = 0; j < DIM; j++) {
     for (let i = 0; i < DIM; i++) {
-      noFill();
-      if(SHOW_ENTROPY){
-        // return tint
-        tint(255, 255)
-      }
+      // if(SHOW_ENTROPY){
+        //   // return tint
+        //   tint(255, 255)
+        // }
       let cell = grid[i + j * DIM];
       if(cell.unsolvable || cell.recollapsing){
+        noFill();
         stroke(255,0,0);
         rect(i * w, j * h, w, h);
-      }
-      else if (cell.collapsed) {
+      } else if (cell.collapsed) {
         let index = cell.options[0];
         image(tiles[index].img, i * w, j * h, w, h);
       } else {
-        //noFill();
-        // if(cell.no_pick){
-        //   stroke(255, 204, 0);
-        // }else{
-          stroke(160);
-          fill(153)
+        // //noFill();
+        // // if(cell.no_pick){
+        // //   stroke(255, 204, 0);
+        // // }else{
+        //   stroke(160);
+        //   fill(153)
+        // // }
+        // rect(i * w, j * h, w, h);
+        // if(SHOW_ENTROPY){
+        //   for(let option of cell.options){
+        //     tint(255, parseInt(255*.1)); // Display at % opacity
+        //     image(tiles[option].img, i * w, j * h, w, h);
+        //   }
         // }
-        rect(i * w, j * h, w, h);
-        if(SHOW_ENTROPY){
-          for(let option of cell.options){
-            tint(255, parseInt(255*.1)); // Display at % opacity
-            image(tiles[option].img, i * w, j * h, w, h);
-          }
+        if(SHOW_NUMS){
+          fill(textColor)
+          textSize(9);
+          text(cell.options.length.toString(),
+            (i * w)-(w/2) + w,
+            (j * h)-(h/2) + h,
+            w,
+            h
+          );
         }
-        fill(textColor)
-        textSize(9);
-        text(cell.options.length.toString(), (i * w)-(w/2) + w, (j * h)-(h/2) + h);
       }
       // tint(255, parseInt(255*.1))
     }

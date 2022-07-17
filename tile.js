@@ -12,7 +12,10 @@ class Tile {
   constructor(imgID, edges, corners, newImg) {
     this.imgID = imgID;
     this.rotated_num = 0;
-    this.img = newImg || tileImages[imgID];
+    this.img = tileImages[imgID];
+    if(newImg){
+      this.img = newImg;
+    }
     this.edges = edges;
     this.corners = corners;
 
@@ -47,9 +50,17 @@ class Tile {
       //   continue;
       // }
 
-      // if (_loops_curves.includes(tile.imgID) && _loops_curves.includes(this.imgID)) continue;
-      // if (_4_ways.includes(tile.imgID) && _4_ways.includes(this.imgID)) continue;
-      // if (_splits.includes(tile.imgID) && _splits.includes(this.imgID)) continue;
+      if(selected_set_key === 'circuit'){
+        if(tile.imgID === 5 && this.imgID === 5){
+          continue;
+        }
+      }
+
+      if(selected_set_key === 'squiggles'){
+        if (_loops_curves.includes(tile.imgID) && _loops_curves.includes(this.imgID)) continue;
+        if (_4_ways.includes(tile.imgID) && _4_ways.includes(this.imgID)) continue;
+        if (_splits.includes(tile.imgID) && _splits.includes(this.imgID)) continue;
+      }
       // if (_diag.includes(tile.imgID) && _diag.includes(this.imgID)) continue;
       // if (_forks.includes(tile.imgID) && _forks.includes(this.imgID)) continue;
 
@@ -142,7 +153,7 @@ class Tile {
     this.rotated_num = num;
     const w = this.img.width;
     const h = this.img.height;
-    console.log(w,h);
+    // console.log(w,h,num,this.imgID);
     const newImg = createGraphics(w, h);
     newImg.imageMode(CENTER);
     newImg.translate(w / 2, h / 2);
