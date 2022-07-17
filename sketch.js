@@ -17,15 +17,15 @@ let SHOW_ENTROPY = false;
 // seamless mode
 let DEFAULT_EMPTY_OPTIONS_ARRAY = [];
 // TODO: make user alterable // responsive // support non-grid
-width = 800
-height = 800
+width = 640
+height = 640
 
 let prev_seamless = JSON.parse(localStorage.getItem('seamless')) ?? false
 // console.log({prev_seamless})
 document.getElementById('seamless').toggleAttribute('checked',prev_seamless)
 let WRAP_AROUND = document.getElementById('seamless').checked;
 
-let prev_delay = localStorage.getItem('delay');
+let prev_delay = JSON.parse(localStorage.getItem('delay'));
 if(prev_delay){
   document.getElementById('delay').value = prev_delay;
 }
@@ -84,30 +84,23 @@ let did_last_draw = false;
 let tile_sets = {
   squiggles: {
     max_id: 62,
-    path: 'jake',
+    path: 'jake/',
   },
   plants: {
     max_id: 39,
-    path: 'plants',
+    path: 'plants/',
   },
-  circuits: {
-    max_id: 7,
-    path: 'circuit-coding-train'
+  circuit: {
+    max_id: 12,
+    path: 'circuit-coding-train/'
   },
   tracks: {
     max_id: 6,
-    path: 'rail'
+    path: 'rail/tile'
   }
 }
 
 let selected_set = tile_sets?.[selected_set_key] ?? tile_sets.plants;
-
-function preload() {
-  // const path = 'rail';
-  // for (let i = 0; i < 7; i++) {
-  //   tileImages[i] = loadImage(`${path}/tile${i}.png`);
-  // }
-}
 
 function removeDuplicatedTiles(tiles) {
   const uniqueTilesMap = {};
@@ -122,6 +115,7 @@ function loadTiles(){
   tiles = [];
   tileImages = [];
   loadTileImages();
+  console.log('loading tiles',selected_set_key);
   switch(selected_set_key){
     case 'plants':
       ROTATIONS_ENABLED = false
@@ -131,35 +125,29 @@ function loadTiles(){
       ROTATIONS_ENABLED = true
       LOAD_SQUIGGLE_SET();
     break;
-    case 'circuits':
+    case 'circuit':
       ROTATIONS_ENABLED = true
       LOAD_CIRCUIT_SET();
     break;
+    case 'tracks':
+      ROTATIONS_ENABLED = true
+      LOAD_TRACKS_SET();
+    break;
+    default:
+      console.error('failed to load tiles!',selected_set_key);
+    break;
   }
-}
-
-function loadTileImages(){
-  const path = `tiles/${selected_set.path}`;
-  for (let i = 0; i <= selected_set.max_id; i++) {
-    tileImages[i] = loadImage(`${path}/${i}.png`);
+  if(!tiles.length){
+    throw new Error('failed to load tiles!');
   }
-}
+  // console.table(tiles);
 
-let seed = 1;
-function setup() {
-  pixelDensity(4);
-  createCanvas(800, 800);
-  drawingContext.imageSmoothingEnabled = false
-  noSmooth();
-
-  randomSeed(seed);
-
-  loadTiles();
-
+  // assign indexes (for self-reference)
   for (let i = 0; i < tiles.length; i++) {
     tiles[i].index = i;
   }
 
+  // generate variations
   if(ROTATIONS_ENABLED){
     const initialTileCount = tiles.length;
     for (let i = 0; i < initialTileCount; i++) {
@@ -167,8 +155,9 @@ function setup() {
       for (let j = 0; j < 4; j++) {
         tempTiles.push(tiles[i].rotate(j));
       }
+      // TODO: make this a per-set option or a user choice
       tempTiles = removeDuplicatedTiles(tempTiles);
-      tiles = tiles.concat(tempTiles);
+      tiles.push(...tempTiles);
     }
     // console.log(tiles.length);
   }
@@ -178,8 +167,27 @@ function setup() {
     const tile = tiles[i];
     tile.analyze(tiles);
   }
+}
 
-  console.table(tiles);
+function loadTileImages(){
+  const path = `tiles/${selected_set.path}`;
+  for (let i = 0; i <= selected_set.max_id; i++) {
+    tileImages[i] = loadImage(`${path}${i}.png`);
+  }
+}
+
+let seed = 1;
+function setup() {
+  // pixelDensity(4);
+  createCanvas(640, 640);
+  // drawingContext.imageSmoothingEnabled = false
+  // noSmooth();
+
+  randomSeed(seed);
+
+  loadTiles();
+
+  // console.table(tiles);
   // debugger;
 
   startOver();
@@ -322,6 +330,9 @@ function getCellsInWindowAroundCell(cell, window_size){
   //   }
   // }
 
+  // TODO: add a diagonal getter @ cell and
+  // allow for dynamic window size
+  // for now it's hand-coded since my modulo math was off...
   let cells_in_window = []
   cells_in_window.push(cell.UP?.LEFT?.index)
   cells_in_window.push(cell.UP?.index)
@@ -602,7 +613,8 @@ function pickLowestEntropyRandomCell(cells){
   // let cell_id = IS_BACKTRACKING ? gridCopy[0].index : random(gridCopy).index;
   let cell_id = gridCopy[0].index;
   if(!cell_id && cell_id !== 0){
-    debugger;
+    // debugger;
+    console.error('bug')
   }
   return cell_id;
 }
@@ -626,7 +638,8 @@ function updateGrid(){
   if(!cell){
     console.warn('DONE!');
     if(IS_BACKTRACKING){
-      debugger;
+      // debugger;
+      // console.error('bug')
     }
     noLoop();
     needs_restart = true;
@@ -640,9 +653,10 @@ function updateGrid(){
   // }
   // console.warn({pick,cell});
   if(pick === undefined){
-    // console.warn('UNCOLLAPSIBLE',{cell});
+    console.warn('UNCOLLAPSIBLE',{cell});
     // noLoop();
     // needs_restart = true;
+    // return;
     // draw();
     // startOver();
 
@@ -784,7 +798,7 @@ function getValidOptionsForCell(j,i){
       //         neighborOptions.push(presumed_valid);
       //     }
       // }
-      neighborOptions = neighborOptions.concat(valid);
+      neighborOptions.push(...valid);
     }
     // console.log('compare', {in_opts:final_options.toString(),local:neighborOptions.toString()})
     // console.log('final options b4 valid up',cell.index,final_options.length);
@@ -808,7 +822,7 @@ function getValidOptionsForCell(j,i){
       //         neighborOptions.push(presumed_valid);
       //     }
       // }
-      neighborOptions = neighborOptions.concat(valid);
+      neighborOptions.push(...valid);
     }
     // console.log('compare', {in_opts:final_options.toString(),local:neighborOptions.toString()})
     // console.log('final options b4 valid right',cell.index,final_options.length);
@@ -831,7 +845,7 @@ function getValidOptionsForCell(j,i){
       //         neighborOptions.push(presumed_valid);
       //     }
       // }
-      neighborOptions = neighborOptions.concat(valid);
+      neighborOptions.push(...valid);
     }
     // console.log('compare', {in_opts:final_options.toString(),local:neighborOptions.toString()})
     // console.log('final options  b4 valid down',cell.index,final_options.length);
@@ -854,7 +868,7 @@ function getValidOptionsForCell(j,i){
       //         neighborOptions.push(presumed_valid);
       //     }
       // }
-      neighborOptions = neighborOptions.concat(valid);
+      neighborOptions.push(...valid);
     }
     // console.log('compare', {in_opts:final_options.toString(),local:neighborOptions.toString()})
     // console.log('final options b4 valid left',cell.index,final_options.length);
@@ -894,8 +908,8 @@ function draw() {
       noFill();
       if(SHOW_ENTROPY){
         // return tint
+        tint(255, 255)
       }
-      tint(255, 255)
       let cell = grid[i + j * DIM];
       if(cell.unsolvable || cell.recollapsing){
         stroke(255,0,0);

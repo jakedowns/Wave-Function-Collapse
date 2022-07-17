@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta name="viewport" content="width=device-width">
-    <meta name="viewport" content="initial-scale=1.0">
+    <meta name="viewport" content="width=640">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <meta charset="utf-8" />
     <title>Wave Function Collapse</title>
@@ -12,6 +11,7 @@
         font-family: sans-serif;
         color: #fff;
         text-align: center;
+        min-width: 640px;
       }
       a {
         color: rgb(133, 195, 67);
@@ -29,7 +29,7 @@
         display: block;
         position: relative;
         margin: 0 auto;
-        width: 800px;
+        width: 640px;
       }
     </style>
   </head>
@@ -39,10 +39,9 @@
       <h3>Wave Function Collapse Image Generator</h3>
       <p>by <a href="https://twitter.com/jakedowns">@jakedowns</a></p>
     <div id="controls">
-      <button onclick="startOver();">restart</button>
       <label>TileSet</label>
       <select id="set_selector">
-        <option selected value="plant">Desert Oasis</option>
+        <option selected value="plants">Desert Oasis</option>
         <option value="squiggles">Squiggles</option>
         <option value="circuit">Circuit</option>
         <option value="tracks">Rail</option>
@@ -53,6 +52,7 @@
       <input type="number" step=".1" min="0" max="10" id="delay" value="0" />
       <label for="">seamless mode</label>
       <input type="checkbox" id="seamless" />
+      <br/><button onclick="startOver();">restart</button>
     </div>
     <main></main>
     <h3>Credits:</h3>
@@ -61,6 +61,10 @@
     </div>
     <script src="tile.js"></script>
     <script src="cell.js"></script>
+    <script src="set_plants.js"></script>
+    <script src="set_tracks.js"></script>
+    <script src="set_circuit.js"></script>
+    <script src="set_squiggles.js"></script>
     <script src="sketch.js"></script>
   </body>
 </html>

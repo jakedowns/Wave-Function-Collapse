@@ -12,7 +12,7 @@ class Tile {
   constructor(imgID, edges, corners, newImg) {
     this.imgID = imgID;
     this.rotated_num = 0;
-    this.img = newImg ?? tileImages[imgID];
+    this.img = newImg || tileImages[imgID];
     this.edges = edges;
     this.corners = corners;
 
@@ -94,8 +94,8 @@ class Tile {
         (!(tile_is_vshore || this_is_vshore))
         || (!(tile_is_vshore && this_is_vshore))
 
-      let FLOWER = 3
-      let BLANK = 0;
+      // let FLOWER = 3
+      // let BLANK = 0;
       const UP = 0;
       const RIGHT = 1;
       const DOWN = 2;
@@ -103,28 +103,28 @@ class Tile {
 
       // UP
       if (compareEdge(tile.edges[DOWN], this.edges[UP])) {
-        if(pass_vshore_check){
+        if(!selected_set_key === 'plants' || (pass_vshore_check)){
           this.up.push(i);
         }
       }
 
       // RIGHT
       if (compareEdge(tile.edges[LEFT], this.edges[RIGHT])) {
-        if(pass_fork_check && pass_diag_check && pass_shore_check){
+        if(!selected_set_key === 'plants' || (pass_fork_check && pass_diag_check && pass_shore_check)){
           this.right.push(i);
         }
       }
 
       // DOWN
       if (compareEdge(tile.edges[UP], this.edges[DOWN])) {
-        if(pass_vshore_check){
+        if(!selected_set_key === 'plants' || (pass_vshore_check)){
           this.down.push(i);
         }
       }
 
       // LEFT
       if (compareEdge(tile.edges[RIGHT], this.edges[LEFT])) {
-        if(pass_fork_check && pass_diag_check && pass_shore_check){
+        if(!selected_set_key === 'plants' || (pass_fork_check && pass_diag_check && pass_shore_check)){
           this.left.push(i);
         }
       }
@@ -142,11 +142,14 @@ class Tile {
     this.rotated_num = num;
     const w = this.img.width;
     const h = this.img.height;
+    console.log(w,h);
     const newImg = createGraphics(w, h);
     newImg.imageMode(CENTER);
     newImg.translate(w / 2, h / 2);
     newImg.rotate(HALF_PI * num);
     newImg.image(this.img, 0, 0);
+    // console.log(newImg);
+    // let newImg = this.img;
 
     const newEdges = [];
     const len = this.edges.length;
@@ -159,6 +162,6 @@ class Tile {
         newCorners[i] = this.corners[(i - num + len) % len];
       }
     }
-    return new Tile(this.imgID, newEdges, newCorners, newImg);
+    return new Tile(this.imgID, newEdges, null, newImg);
   }
 }
