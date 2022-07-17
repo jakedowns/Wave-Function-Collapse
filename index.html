@@ -91,8 +91,14 @@
       <label for="seamless"><input name="seamless" type="checkbox" id="seamless" /> seamless mode</label>
       <br>
       <label for="debug"><input name="debug" type="checkbox" id="debug" /> show counts</label>
-
       <br/>
+      <label for="backtrack_mode">Backtrack Mode: </label>
+      <select name="backtrack_mode" id="backtrack_mode">
+        <option value="none">None</option>
+        <option value="local" selected>Local</option>
+        <option value="sequential">Sequential</option>
+      </select>
+      <br>
       <button onclick="startOver();">restart</button>
       <button onclick="isLooping() ? noLoop() : loop()">pause</button>
       <button onclick="saveCanvas('wfc-'+selected_set_key+'-seed-'+seed)">save img</button>
@@ -102,6 +108,7 @@
     <p>Original Source Code: The Coding Train's <a href="https://github.com/CodingTrain/Wave-Function-Collapse">Wave Function Collapse Coding Challenge</a>. Made with P5.js</p>
     <p>Tiles made with <a href="https://www.pixilart.com/">PixilArt.com</a></p>
     </div>
+    <script src="controls.js"></script>
     <script src="tile.js"></script>
     <script src="cell.js"></script>
     <script src="set_plants.js"></script>
