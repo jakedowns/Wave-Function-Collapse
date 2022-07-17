@@ -388,30 +388,43 @@ function checkAtLeastOneNeighborCollapsed(row,col){
 
 function getCellsInWindowAroundCell(cell, window_size){
   // todo check window size is ODD , not even number
+  // let cells_in_window = []
+  // let half_win = Math.round( (window_size - 1) / 2 );
+
+  // let col_start = cell.col - half_win
+  // let col_end = cell.col + half_win;
+
+  // let row_start = cell.row - half_win
+  // // if(row_start < 0) row_start = 0;
+  // let row_end = cell.row + half_win;
+  // // if(row_end > DIM - 1) row_end = DIM - 1;
+
+  // for(let row = row_start; row <= row_end; row++){
+  //   for(let col = col_start; col <= col_end; col++){
+  //     let _rel_row = (row + DIM - 1) % DIM
+  //     let _rel_col = (col + DIM - 1) % DIM
+  //     //console.log({row,col,_rel_row,_rel_col})
+  //     let index = (_rel_row * DIM) + _rel_col;
+  //     cells_in_window.push(index);
+  //     // noFill()
+  //     // stroke(255, 0, 0);
+  //     // rect(_rel_row * w, _rel_col * h, w, h);
+  //     grid[index].recollapsing = true;
+  //   }
+  // }
+
   let cells_in_window = []
-  let half_win = Math.round( (window_size - 1) / 2 );
-
-  let col_start = cell.col - half_win
-  let col_end = cell.col + half_win;
-
-  let row_start = cell.row - half_win
-  // if(row_start < 0) row_start = 0;
-  let row_end = cell.row + half_win;
-  // if(row_end > DIM - 1) row_end = DIM - 1;
-
-  for(let row = row_start; row <= row_end; row++){
-    for(let col = col_start; col <= col_end; col++){
-      let _rel_row = (row + DIM - 1) % DIM
-      let _rel_col = (col + DIM - 1) % DIM
-      //console.log({row,col,_rel_row,_rel_col})
-      let index = (_rel_row * DIM) + _rel_col;
-      cells_in_window.push(index);
-      // noFill()
-      // stroke(255, 0, 0);
-      // rect(_rel_row * w, _rel_col * h, w, h);
-      grid[index].recollapsing = true;
-    }
-  }
+  cells_in_window.push(cell.UP?.LEFT?.index)
+  cells_in_window.push(cell.UP?.index)
+  cells_in_window.push(cell.UP?.RIGHT?.index)
+  cells_in_window.push(cell.LEFT?.index)
+  cells_in_window.push(cell.index)
+  cells_in_window.push(cell.RIGHT?.index)
+  cells_in_window.push(cell.DOWN?.LEFT?.index)
+  cells_in_window.push(cell.DOWN?.index)
+  cells_in_window.push(cell.DOWN?.RIGHT?.index)
+  cells_in_window = cells_in_window.filter(c=>c)
+  console.log({cells_in_window})
 
   // debugger;
 
@@ -474,49 +487,48 @@ function collapseCellsInWindow(cells_in_window){
       // collapse the cell
       grid[pick.index].collapsed = true;
       grid[pick.index].recollapsing = false
+      grid[pick.index].unsolvable = false
       grid[pick.index].options = [picked_option]
       collapsed.push(pick.index)
+      console.log('recollapsed:',pick.index,picked_option)
     }else{
       // another un-solvable cell,
       // skip it for now and the while loop will expand the entropy scramble window size
+      console.log('unsolvable',pick)
     }
   }
+  // debugger;
 }
 
 function recursivelyRecollapseRegionAroundCell(cell){
   let window_size = 3;
   let window_fixed = false;
   let do_start_over = false;
-  while(window_size < (DIM*2) && !window_fixed){
-    if(window_size > (DIM*2)){
-      do_start_over = true;
-      break;
-    }
+  // while(collapsed.length && !window_fixed){
+    // if(window_size > (DIM*2)){
+    //   do_start_over = true;
+    //   break;
+    // }
     let cells_in_window = getCellsInWindowAroundCell(cell,window_size);
+    console.log("cells_in_window",cells_in_window.length,cells_in_window);
     uncollapseAllCellsInWindow(cells_in_window);
     collapseCellsInWindow(cells_in_window);
     if(checkAllCellsInWindowAreCollapsed(cells_in_window)){
       window_fixed = true;
-      break;
+      // break;
     }
-    debugger;
-    window_size+=2
-  }
-  if(do_start_over){
-    startOver();
-  }
+    console.log('window fixed?',window_fixed,cells_in_window);
+    // debugger;
+    // window_size+=1
+  // }
+  // if(do_start_over){
+  //   startOver();
+  // }
 }
 
 let backtrack_window_size = 3; // start with the 9 adjacent cells
 
 function backTrackAttemptOne(cell){
-    if(!IS_BACKTRACKING){
-      IS_BACKTRACKING = true;
-      backtrack_started_at = cell.index;
-      collapsed_at_backtrack_start = collapsed.slice();
-    }else{
-      console.log('backtracking... ',collapsed.length)
-    }
 
     // console.log('backTrackAttemptOne',cell);
     // debugger;
@@ -678,7 +690,8 @@ function pickLowestEntropyRandomCell(cells){
 
   // console.log(gridCopy,collapsed.at(-1));
   // pick a random low entropy cell
-  let cell_id = IS_BACKTRACKING ? gridCopy[0].index : random(gridCopy).index;
+  // let cell_id = IS_BACKTRACKING ? gridCopy[0].index : random(gridCopy).index;
+  let cell_id = gridCopy[0].index;
   if(!cell_id && cell_id !== 0){
     debugger;
   }
@@ -723,8 +736,18 @@ function updateGrid(){
     // needs_restart = true;
     // draw();
     // startOver();
-    backTrackAttemptOne(cell);
-    // recursivelyRecollapseRegionAroundCell(cell)
+
+    if(!IS_BACKTRACKING){
+      IS_BACKTRACKING = true;
+      backtrack_started_at = cell.index;
+      collapsed_at_backtrack_start = collapsed.slice();
+    }
+    console.log('backtracking... ',backtrack_started_at)
+
+    /* this one just walks backward... sometimes it works, sometimes it gets stuck */
+    // backTrackAttemptOne(cell);
+
+    recursivelyRecollapseRegionAroundCell(cell)
     // console.error('huh?!',cell);
     // cell.unsolvable = true;
     // noLoop();
@@ -739,6 +762,7 @@ function updateGrid(){
   collapsed.push(cell.index);
   cell.options = [pick];
   cell.unsolvable = false;
+  cell.recollapsing = false;
   // console.log('picked',cell);
   // noFill()
   // stroke(0, 204, 255);
@@ -791,7 +815,7 @@ function updateGrid(){
             nextGrid[index].unsolvable = false;
           }
 
-          // pre-collapse if only one option remains
+          // pre-collapse if only one option remains? (would need to recursively update neighbors)
           // if(final_options.length === 1){
           //   nextGrid[index].collapsed = true;
           //   collapsed.push(index);
@@ -959,10 +983,12 @@ function draw() {
   for (let j = 0; j < DIM; j++) {
     for (let i = 0; i < DIM; i++) {
       noFill();
-      // tint(255, 255)
+      if(SHOW_ENTROPY){
+        // return tint
+      }
+      tint(255, 255)
       let cell = grid[i + j * DIM];
       if(cell.unsolvable || cell.recollapsing){
-
         stroke(255,0,0);
         rect(i * w, j * h, w, h);
       }
@@ -978,10 +1004,12 @@ function draw() {
           fill(153)
         // }
         rect(i * w, j * h, w, h);
-        // for(let option of cell.options){
-        //   tint(255, parseInt(255*.1)); // Display at % opacity
-        //   image(tiles[option].img, i * w, j * h, w, h);
-        // }
+        if(SHOW_ENTROPY){
+          for(let option of cell.options){
+            tint(255, parseInt(255*.1)); // Display at % opacity
+            image(tiles[option].img, i * w, j * h, w, h);
+          }
+        }
         fill(textColor)
         textSize(9);
         text(cell.options.length.toString(), (i * w)-(w/2) + w, (j * h)-(h/2) + h);

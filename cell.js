@@ -24,12 +24,13 @@ class Cell {
   uncollapse(){
     this.collapsed = false;
     this._resetOptions()
+    this.recollapsing = true;
   }
   _resetOptions(){
     this.options = new Array(tiles.length).fill(0).map((x, i) => i)
-    if(this.options.length && this.options?.[0] === undefined){
-      debugger;
-    }
+    // if(this.options.length && this.options?.[0] === undefined){
+    //   debugger;
+    // }
   }
   get UP(){
     if(!WRAP_AROUND && this.row === 0){
