@@ -1,4 +1,12 @@
-# Wave-Function-Collapse
+OG Repo: [https://github.com/CodingTrain/Wave-Function-Collapse](https://github.com/CodingTrain/Wave-Function-Collapse)
+
+Hosted Demo: [https://jakedowns.com/oasis/](https://jakedowns.com/oasis/)
+
+Announcement Tweet: [https://twitter.com/jakedowns/status/1548593109092552705](https://twitter.com/jakedowns/status/1548593109092552705)
+
+
+
+<!-- # Wave-Function-Collapse
 
 Straight out of quantum mechanics, Wave Function Collapse is an algorithm for procedural generation of images. In this video (recorded over 3 live streams) I attempt the tiled model and explore a variety of solutions to the algorithm in JavaScript with p5.js.
 
@@ -31,4 +39,4 @@ Straight out of quantum mechanics, Wave Function Collapse is an algorithm for pr
 
 ## Related work
 
-- [WFC using local storage](https://editor.p5js.org/kfahn/full/iNUF-Lgdf) by @kfahn22.
+- [WFC using local storage](https://editor.p5js.org/kfahn/full/iNUF-Lgdf) by @kfahn22. -->
