@@ -4,7 +4,7 @@ Hosted Demo: [https://jakedowns.com/oasis/](https://jakedowns.com/oasis/)
 
 Announcement Tweet: [https://twitter.com/jakedowns/status/1548593109092552705](https://twitter.com/jakedowns/status/1548593109092552705)
 
-
+![https://jakedowns.com/oasis/demo.gif](https://jakedowns.com/oasis/demo.gif)
 
 <!-- # Wave-Function-Collapse
 
