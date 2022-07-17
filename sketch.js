@@ -627,8 +627,9 @@ function pickLowestEntropyRandomCell(cells){
 
   // console.log(gridCopy,collapsed.at(-1));
   // pick a random low entropy cell
-  // let cell_id = IS_BACKTRACKING ? gridCopy[0].index : random(gridCopy).index;
-  let cell_id = gridCopy[0].index;
+  let cell_id = IS_BACKTRACKING ? gridCopy[0].index : random(gridCopy).index;
+  // let cell_id = gridCopy[0].index;
+  // let cell_id = random(gridCopy).index;
   if(!cell_id && cell_id !== 0){
     // debugger;
     console.error('bug')
