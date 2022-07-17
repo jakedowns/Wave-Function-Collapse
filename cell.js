@@ -35,24 +35,41 @@ class Cell {
     if(!WRAP_AROUND && this.row === 0){
       return null;
     }
-    return grid[this.col + ((this.row - 1) % DIM) * DIM]
+    // debugger;
+    let index = this.col + (((this.row + DIM - 1) % DIM) * DIM);
+    // if(this.index === 7){
+    //   console.warn('up',index);
+    // }
+    // let up = grid[i + ((j + DIM - 1) % DIM) * DIM];
+    // if(index === undefined){
+    //   debugger;
+    // }
+    return grid[index]
   }
   get RIGHT(){
     if(!WRAP_AROUND && this.col === DIM - 1){
       return null;
     }
-    return grid[(this.col + 1) % DIM + this.row * DIM]
+    return grid[(((this.col + 1 + DIM) % DIM)) + (this.row * DIM)]
   }
   get DOWN(){
     if(!WRAP_AROUND && this.row === DIM - 1){
       return null;
     }
-    return grid[this.col + ((this.row + 1) % DIM) * DIM]
+    return grid[this.col + (((this.row + DIM + 1) % DIM) * DIM)]
   }
   get LEFT(){
     if(!WRAP_AROUND && this.col === 0){
       return null;
     }
-    return grid[((this.col + DIM) % DIM) + this.row * DIM]
+    let left_index = ((this.col - 1 + DIM) % DIM) + (this.row * DIM);
+    // console.error({
+    //   index:this.index,
+    //   left_index,
+    //   col:this.col,
+    //   row:this.row
+    // });
+    // debugger;
+    return grid[left_index]
   }
 }

@@ -4,16 +4,20 @@ const tileImages = [];
 let grid = [];
 
 // seamless mode
-const WRAP_AROUND = false; // TODO: wire up to seamless checkbox
-
+let DEFAULT_EMPTY_OPTIONS_ARRAY = [];
 width = 800
 height = 800
+
+let prev_seamless = JSON.parse(localStorage.getItem('seamless')) ?? false
+console.log({prev_seamless})
+document.getElementById('seamless').toggleAttribute('checked',prev_seamless)
+let WRAP_AROUND = document.getElementById('seamless').checked;
 
 let prev_delay = localStorage.getItem('delay');
 if(prev_delay){
   document.getElementById('delay').value = prev_delay;
 }
-let GLOBAL_DELAY = document.getElementById('delay').value;
+let GLOBAL_DELAY = parseInt(document.getElementById('delay').value);
 
 let prev_dim = localStorage.getItem('tile-size');
 if(prev_dim){
@@ -21,11 +25,12 @@ if(prev_dim){
 }
 
 let DIM = document.getElementById('tile-size').value;
+DIM=parseInt(DIM);
 let w = width / DIM;
 let h = height / DIM;
 
 document.getElementById('tile-size').addEventListener('change', function(event) {
-  DIM = event.target.value;
+  DIM = parseInt(event.target.value);
   w = width / DIM;
   h = height / DIM;
   startOver();
@@ -35,6 +40,12 @@ document.getElementById('tile-size').addEventListener('change', function(event) 
 document.getElementById('delay').addEventListener('change', function(event) {
   GLOBAL_DELAY = event.target.value;
   localStorage.setItem('delay', GLOBAL_DELAY);
+});
+
+document.getElementById('seamless').addEventListener('change', function(event) {
+  WRAP_AROUND = event.target.checked;
+  localStorage.setItem('seamless', WRAP_AROUND);
+  startOver();
 });
 
 let needs_restart = false;
@@ -59,8 +70,7 @@ function preload() {
       path: 'jake',
     },
     plants: {
-      // 11 total, 0-indexed
-      max_id: 10,
+      max_id: 11,
       path: 'plants',
     },
     circuits: {
@@ -183,17 +193,18 @@ function setup() {
   // tiles.push( new Tile(62, ['CCC', 'AAA', 'CAC', 'AAA']) );
 
   // plant set
-  tiles.push( new Tile(0, ['AAA', 'AAA', 'AAA', 'AAA']) );
-  tiles.push( new Tile(1, ['ABA', 'AAA', 'AAA', 'AAA']) );
-  tiles.push( new Tile(2, ['ABA', 'AAA', 'ABA', 'AAA']) );
-  tiles.push( new Tile(3, ['ABA', 'AAA', 'ABA', 'AAA'], [null, null, null, 'B']) );
-  tiles.push( new Tile(4, ['AAA', 'AAA', 'ABA', 'AAA']) );
-  tiles.push( new Tile(5, ['ABA', 'AAA', 'AAA', 'AAA'], [null, null, 'B', null]) );
-  tiles.push( new Tile(6, ['ABA', 'AAA', 'ABA', 'AAA']) );
-  tiles.push( new Tile(7, ['ABA', 'AAA', 'ABA', 'AAA']) );
-  tiles.push( new Tile(8, ['ABA', 'AAA', 'ABA', 'AAA']) );
-  tiles.push( new Tile(9, ['ABA', 'AAA', 'ABA', 'AAA'], ['B', null, null, null]) );
-  tiles.push( new Tile(10, ['ABA', 'AAA', 'BAA', 'AAA'], [null, 'B', null, null]) );
+  tiles.push( new Tile(0,  ['AAA', 'AAA', 'AAA', 'AAA']) ); // 0,0,0,0
+  tiles.push( new Tile(1,  ['ABA', 'AAA', 'AAA', 'AAA']) ); // 1,0,0,0
+  tiles.push( new Tile(2,  ['ABA', 'AAA', 'ABA', 'AAA']) ); // 1,0,1,0
+  tiles.push( new Tile(3,  ['AAA', 'AAA', 'ABA', 'AAA']) ); // 0,0,1,0
+  tiles.push( new Tile(4,  ['ABA', 'AAA', 'ABA', 'AAA']) ); // 1,0,1,0
+  tiles.push( new Tile(5,  ['ABA', 'AAA', 'ABA', 'AAA']) ); // 1,0,1,0
+  tiles.push( new Tile(6,  ['ABA', 'AAA', 'ABA', 'AAA']) ); // 1,0,1,0
+  tiles.push( new Tile(7,  ['ABA', 'AAA', 'AAA', 'ABA']) ); // 1,0,0,1
+  tiles.push( new Tile(8,  ['ABA', 'ABA', 'AAA', 'AAA']) ); // 1,1,0,0
+  tiles.push( new Tile(9,  ['ABA', 'AAA', 'ABA', 'ABA']) ); // 1,0,1,1
+  tiles.push( new Tile(10, ['ABA', 'ABA', 'ABA', 'AAA']) ); // 1,1,1,0
+  tiles.push( new Tile(11, ['ABA', 'ABA', 'ABA', 'ABA']) ); // 1,1,1,1
 
   const ROTATIONS_ENABLED = false;
 
@@ -243,6 +254,7 @@ function startOver() {
   backtrack_counter = {}
   needs_restart = false;
   did_last_draw = false;
+
   // Create cell for each spot on the grid
   // for (let i = 0; i < DIM * DIM; i++) {
   //   grid[i] = new Cell(tiles.length, i);
@@ -271,6 +283,10 @@ function startOver() {
   // console.warn('UP r,c',ref_cell.UP.row, ref_cell.UP.col);
   // debugger;
   // expect ref_cell.RIGHT = null
+
+  if(!isLooping()){
+    loop();
+  }
 }
 
 function checkValid(arr, valid) {
@@ -297,19 +313,19 @@ function checkValid(arr, valid) {
   return _arr;
 }
 
-function mousePressed() {
-  if(mouseButton!==LEFT){
-    return;
-  }
-  if(isLooping()){
-      noLoop();
-  }else{
-    if(needs_restart){
-      startOver();
-    }
-    loop();
-  }
-}
+// function mousePressed() {
+//   if(mouseButton!==LEFT){
+//     return;
+//   }
+//   if(isLooping()){
+//       noLoop();
+//   }else{
+//     if(needs_restart){
+//       startOver();
+//     }
+//     loop();
+//   }
+// }
 
 function cellAt(row,col){
   return grid[(row*DIM)+col]
@@ -455,8 +471,9 @@ let backtrack_window_size = 3; // start with the 9 adjacent cells
 
 function backTrackAttemptOne(cell){
     console.log('backTrackAttemptOne',cell);
+    debugger;
     const BT_THRESHOLD = 3; //tiles.length / 3;
-    let backtrack_i = -1;
+    let backtrack_i = 0;
     let backtrack = true
 
     // we will grow this window up to max DIM (which would basically be the same as starting over)
@@ -466,18 +483,18 @@ function backTrackAttemptOne(cell){
     // TODO: radiate un-collapsed "window" until the window can fully collapse
 
     // un-collapse any cells with no adjacent collapsed cells (unless it is the ONLY collapsed cell)
-    let gridTempCopy = grid.slice();
-    let _collapsed = gridTempCopy.filter(v => v.collapsed);
-    for(let i = 0; i<_collapsed.length; i++){
-      let ref = _collapsed[i]
-      let og = grid[ref.index]
-      let orphaned = !checkAtLeastOneNeighborCollapsed(ref.row,ref.col)
-      if(orphaned){
-        let splice_index = collapsed.indexOf(ref.index)
-        collapsed.splice(splice_index,1)
-        og.uncollapse()
-      }
-    }
+    // let gridTempCopy = grid.slice();
+    // let _collapsed = gridTempCopy.filter(v => v.collapsed);
+    // for(let i = 0; i<_collapsed.length; i++){
+    //   let ref = _collapsed[i]
+    //   let og = grid[ref.index]
+    //   let orphaned = !checkAtLeastOneNeighborCollapsed(ref.row,ref.col)
+    //   if(orphaned){
+    //     let splice_index = collapsed.indexOf(ref.index)
+    //     collapsed.splice(splice_index,1)
+    //     og.uncollapse()
+    //   }
+    // }
 
     // let cells_in_window = getCellsInWindowAroundCell(cell, backtrack_window_size);
     // let all_cells_uncollapsed = checkAllCellsInWindowAreUnCollapsed(cells_in_window);
@@ -515,19 +532,27 @@ function backTrackAttemptOne(cell){
       }
       let prev_c_index = collapsed.length - backtrack_i;
       if(prev_c_index >= collapsed.length){
-        prev_c_index = collapsed.length - 1;
+        // prev_c_index = collapsed.length - 1;
+        debugger;
+        break;
       }
       if(prev_c_index < 0){
-        prev_c_index = 0;
+        debugger;
+        break;
+        // prev_c_index = 0;
       }
 
       let prev_index = collapsed?.[prev_c_index];
       let prev_cell = grid?.[prev_index];
       if(!prev_cell){
-        console.warn('not found',{prev_index,backtrack_i,c_len:collapsed.length})
+        console.error('not found',{prev_index,backtrack_i,c_len:collapsed.length})
         backtrack = false;
-        continue;
+        break;
       }
+
+      // did we already backtrack this tile?
+      const prev_count_for_cell = backtrack_counter?.[prev_cell.index]
+
       if(prev_cell){
         // console.log('backtracking ', {
         //   backtrack_i,
@@ -537,20 +562,27 @@ function backTrackAttemptOne(cell){
         // })
         grid[prev_cell.index].uncollapse();
 
-        backtrack_counter[prev_cell.index] = backtrack_counter?.[prev_cell.index] ? backtrack_counter[prev_cell.index]+1 : 1
+        backtrack_counter[prev_cell.index] =
+          backtrack_counter?.[prev_cell.index]
+          ? backtrack_counter[prev_cell.index]+1 : 1
 
         let in_c_arr = collapsed.indexOf(prev_cell.index)
         if(in_c_arr > -1){
           collapsed.splice(in_c_arr,1);
         }
 
-        if(backtrack_counter[prev_cell.index] < BT_THRESHOLD){
+        // recalculate entropy
+        updateGrid();
+
+        // if(backtrack_counter[prev_cell.index] < BT_THRESHOLD){
           // console.warn(pick_counter[prev_cell.index]);
           // debugger;
-          backtrack = false; // break loop if this cell hasn't been retried a bunch
-          //OTHERWISE, let the loop continue BACKWARDS into the prev collapsed list to retry on older Cells
-          continue;
+          // backtrack = false; // break loop if this cell hasn't been retried a bunch
+        if(!prev_count_for_cell){
+          break;
         }
+          //OTHERWISE, let the loop continue BACKWARDS into the prev collapsed list to retry on older Cells
+        // }
       }
     }
 
@@ -608,14 +640,17 @@ function updateGrid(){
   // pick a random option for the cell to collapse to
   // TODO: add weights/probabilities
   let pick = random(cell.options);
-  console.warn({pick,cell});
+  // if(cell.index === 7 && pick === 3){
+  //   debugger;
+  // }
+  // console.warn({pick,cell});
   if(pick === undefined){
-    console.warn('UNCOLLAPSIBLE',{cell});
-    noLoop();
-    needs_restart = true;
+    // console.warn('UNCOLLAPSIBLE',{cell});
+    // noLoop();
+    // needs_restart = true;
     // draw();
     // startOver();
-    // backTrackAttemptOne(cell);
+    backTrackAttemptOne(cell);
     // recursivelyRecollapseRegionAroundCell(cell)
     // console.error('huh?!',cell);
     // cell.unsolvable = true;
@@ -662,7 +697,7 @@ function updateGrid(){
       } else {
         // if ZERO adjacent cells are collapsed, skip for now...
         const at_least_one_collapsed = checkAtLeastOneNeighborCollapsed(j,i)
-        if(false && !at_least_one_collapsed){
+        if(!at_least_one_collapsed){
           nextGrid[index] = grid[index]
           //nextGrid[index] = new Cell(tiles.length, index); //grid[index];
           // nextGrid[index] = new Cell(0, index, j, i);
@@ -690,13 +725,16 @@ function updateGrid(){
     }
   }
 
-  console.warn(JSON.stringify(nextGrid[5]))
+  // console.warn(JSON.stringify(nextGrid[5]))
 
   grid = nextGrid;
 }
 
 function getValidOptionsForCell(j,i){
-  let final_options = new Array(tiles.length).fill(0).map((x, i)=>i);
+  if(!DEFAULT_EMPTY_OPTIONS_ARRAY.length){
+    DEFAULT_EMPTY_OPTIONS_ARRAY = new Array(tiles.length).fill(0).map((x, i)=>i);
+  }
+  let final_options = DEFAULT_EMPTY_OPTIONS_ARRAY.slice();
   let cell = grid[(j*DIM)+i]
 
   // console.log({calc_cell});
@@ -723,6 +761,9 @@ function getValidOptionsForCell(j,i){
     //   debugger;
     // }
     let neighborOptions = [];
+    // if(!up?.options){
+    //   debugger;
+    // }
     for (let option of up.options) {
       // if(tiles[option] === undefined){
       //   debugger;
@@ -737,7 +778,7 @@ function getValidOptionsForCell(j,i){
       neighborOptions = neighborOptions.concat(valid);
     }
     // console.log('compare', {in_opts:final_options.toString(),local:neighborOptions.toString()})
-    console.log('final options b4 valid up',cell.index,final_options.length);
+    // console.log('final options b4 valid up',cell.index,final_options.length);
     final_options = checkValid(final_options, neighborOptions);
     // if(!final_options.length){
     //   debugger;
@@ -761,7 +802,7 @@ function getValidOptionsForCell(j,i){
       neighborOptions = neighborOptions.concat(valid);
     }
     // console.log('compare', {in_opts:final_options.toString(),local:neighborOptions.toString()})
-    console.log('final options b4 valid right',cell.index,final_options.length);
+    // console.log('final options b4 valid right',cell.index,final_options.length);
     final_options = checkValid(final_options, neighborOptions);
     // if(!final_options.length){
     //   debugger;
@@ -784,7 +825,7 @@ function getValidOptionsForCell(j,i){
       neighborOptions = neighborOptions.concat(valid);
     }
     // console.log('compare', {in_opts:final_options.toString(),local:neighborOptions.toString()})
-    console.log('final options  b4 valid down',cell.index,final_options.length);
+    // console.log('final options  b4 valid down',cell.index,final_options.length);
     final_options = checkValid(final_options, neighborOptions);
     // if(!final_options.length){
     //   debugger;
@@ -807,16 +848,16 @@ function getValidOptionsForCell(j,i){
       neighborOptions = neighborOptions.concat(valid);
     }
     // console.log('compare', {in_opts:final_options.toString(),local:neighborOptions.toString()})
-    console.log('final options b4 valid left',cell.index,final_options.length);
+    // console.log('final options b4 valid left',cell.index,final_options.length);
     final_options = checkValid(final_options, neighborOptions);
     // if(!final_options.length){
     //   debugger;
     // }
   }
-  if(!final_options.length){
-    console.error({up,right,down,left,cell})
-    debugger;
-  }
+  // if(!final_options.length){
+  //   console.error({up,right,down,left,cell})
+  //   debugger;
+  // }
   return final_options
 }
 
@@ -842,7 +883,7 @@ function draw() {
   for (let j = 0; j < DIM; j++) {
     for (let i = 0; i < DIM; i++) {
       noFill();
-      tint(255, 255)
+      // tint(255, 255)
       let cell = grid[i + j * DIM];
       if(cell.unsolvable || cell.recollapsing){
 
@@ -861,12 +902,12 @@ function draw() {
           fill(153)
         // }
         rect(i * w, j * h, w, h);
-        for(let option of cell.options){
-          tint(255, parseInt(255*.1)); // Display at % opacity
-          image(tiles[option].img, i * w, j * h, w, h);
-        }
+        // for(let option of cell.options){
+        //   tint(255, parseInt(255*.1)); // Display at % opacity
+        //   image(tiles[option].img, i * w, j * h, w, h);
+        // }
         fill(textColor)
-        textSize(32);
+        textSize(9);
         text(cell.options.length.toString(), (i * w)-(w/2) + w, (j * h)-(h/2) + h);
       }
       // tint(255, parseInt(255*.1))

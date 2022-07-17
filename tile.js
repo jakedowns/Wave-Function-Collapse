@@ -32,6 +32,9 @@ class Tile {
     const _loops_curves = [7,8,9,24]
     const _4_ways = [4,5,6,27,28,29,32,36,37,38,39]
     const _splits = [10,11,12,13,14,20,21,22,23,40,41,42,43]
+
+    const _forks = [9,10,11]
+    const _diag = [7,8]
     for (let i = 0; i < tiles.length; i++) {
       let tile = tiles[i];
 
@@ -42,6 +45,8 @@ class Tile {
       // if (_loops_curves.includes(tile.imgID) && _loops_curves.includes(this.imgID)) continue;
       // if (_4_ways.includes(tile.imgID) && _4_ways.includes(this.imgID)) continue;
       // if (_splits.includes(tile.imgID) && _splits.includes(this.imgID)) continue;
+      // if (_diag.includes(tile.imgID) && _diag.includes(this.imgID)) continue;
+      // if (_forks.includes(tile.imgID) && _forks.includes(this.imgID)) continue;
 
       // allow tile 0 to connect to any tile
       // this.up.push(0)
@@ -54,34 +59,62 @@ class Tile {
       //   debugger;
       // }
 
-      if(this.imgID === 4 && tile.imgID !== 0){
-        continue;
-      }
+      // let pot_v_blank = this.imgID === 1 && tile.imgID === 0;
+      // let blank_v_pot = this.imgID === 0 && tile.imgID === 1;
+      // let is_pot_and_blank = pot_v_blank || blank_v_pot;
+      // let neither_is_pot = (this.imgID !== 1 && tile.imgID !== 1)
+      // const true = true; //is_pot_and_blank || neither_is_pot
+
+      const tile_is_fork = _forks.includes(tile.imgID)
+      const this_is_fork = _forks.includes(this.imgID)
+      const pass_fork_check =
+        (!(tile_is_fork || this_is_fork))
+        || (!(tile_is_fork && this_is_fork))
+
+      const tile_is_diag = _diag.includes(tile.imgID)
+      const this_is_diag = _diag.includes(this.imgID)
+      const pass_diag_check =
+        (!(tile_is_diag || this_is_diag))
+        || (!(tile_is_diag && this_is_diag))
+
+      let FLOWER = 3
+      let BLANK = 0;
+      const UP = 0;
+      const RIGHT = 1;
+      const DOWN = 2;
+      const LEFT = 3;
 
       // UP
-      if (compareEdge(tile.edges[2], this.edges[0])) {
+      if (compareEdge(tile.edges[DOWN], this.edges[UP])) {
         this.up.push(i);
       }
+
       // RIGHT
-      if (compareEdge(tile.edges[3], this.edges[1])) {
-        this.right.push(i);
-      }
-      // DOWN
-      if (compareEdge(tile.edges[0], this.edges[2])) {
-        this.down.push(i);
-      }
-      // LEFT
-      if (compareEdge(tile.edges[1], this.edges[3])) {
-        this.left.push(i);
+      if (compareEdge(tile.edges[LEFT], this.edges[RIGHT])) {
+        if(pass_fork_check && pass_diag_check){
+          this.right.push(i);
+        }
       }
 
-      if(this.corners || tile.corners){
-        
+      // DOWN
+      if (compareEdge(tile.edges[UP], this.edges[DOWN])) {
+        this.down.push(i);
       }
+
+      // LEFT
+      if (compareEdge(tile.edges[RIGHT], this.edges[LEFT])) {
+        if(pass_fork_check && pass_diag_check){
+          this.left.push(i);
+        }
+      }
+
+      // if(this.corners || tile.corners){
+
+      // }
     }
-    if(this.imgID === 5){
-      console.warn('did tile 5 have down options at analyze time?', this.down.slice());
-    }
+    // if(this.imgID === 4){
+    //   console.warn('did tile 4 have down options at analyze time?', this.down.slice());
+    // }
   }
 
   rotate(num) {
