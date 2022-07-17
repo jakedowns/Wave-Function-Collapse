@@ -33,8 +33,13 @@ class Tile {
     const _4_ways = [4,5,6,27,28,29,32,36,37,38,39]
     const _splits = [10,11,12,13,14,20,21,22,23,40,41,42,43]
 
-    const _forks = [9,10,11]
-    const _diag = [7,8]
+    const _forks = [9,10,11,13,14,23, 18,19,20, 23]
+    const _diag = [7,8,12,15, 21,22]
+    // prevent horizontal butting up
+    const _shores = [26,31,32,36,37,38]
+    // prevent vertical butting up
+    const _vshores = [26,30,31,35,36,37]
+
     for (let i = 0; i < tiles.length; i++) {
       let tile = tiles[i];
 
@@ -77,6 +82,18 @@ class Tile {
         (!(tile_is_diag || this_is_diag))
         || (!(tile_is_diag && this_is_diag))
 
+      const tile_is_shore = _shores.includes(tile.imgID)
+      const this_is_shore = _shores.includes(this.imgID)
+      const pass_shore_check =
+        (!(tile_is_shore || this_is_shore))
+        || (!(tile_is_shore && this_is_shore))
+
+      const tile_is_vshore = _vshores.includes(tile.imgID)
+      const this_is_vshore = _vshores.includes(this.imgID)
+      const pass_vshore_check =
+        (!(tile_is_vshore || this_is_vshore))
+        || (!(tile_is_vshore && this_is_vshore))
+
       let FLOWER = 3
       let BLANK = 0;
       const UP = 0;
@@ -86,24 +103,28 @@ class Tile {
 
       // UP
       if (compareEdge(tile.edges[DOWN], this.edges[UP])) {
-        this.up.push(i);
+        if(pass_vshore_check){
+          this.up.push(i);
+        }
       }
 
       // RIGHT
       if (compareEdge(tile.edges[LEFT], this.edges[RIGHT])) {
-        if(pass_fork_check && pass_diag_check){
+        if(pass_fork_check && pass_diag_check && pass_shore_check){
           this.right.push(i);
         }
       }
 
       // DOWN
       if (compareEdge(tile.edges[UP], this.edges[DOWN])) {
-        this.down.push(i);
+        if(pass_vshore_check){
+          this.down.push(i);
+        }
       }
 
       // LEFT
       if (compareEdge(tile.edges[RIGHT], this.edges[LEFT])) {
-        if(pass_fork_check && pass_diag_check){
+        if(pass_fork_check && pass_diag_check && pass_shore_check){
           this.left.push(i);
         }
       }

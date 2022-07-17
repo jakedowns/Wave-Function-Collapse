@@ -2,6 +2,12 @@ let tiles = [];
 const tileImages = [];
 
 let grid = [];
+let IS_BACKTRACKING = false
+let backtrack_started_at = null
+let collapsed_at_backtrack_start = null;
+let latest_uncollapsed_cell = null;
+
+let SHOW_ENTROPY = false;
 
 // seamless mode
 let DEFAULT_EMPTY_OPTIONS_ARRAY = [];
@@ -70,7 +76,7 @@ function preload() {
       path: 'jake',
     },
     plants: {
-      max_id: 11,
+      max_id: 39,
       path: 'plants',
     },
     circuits: {
@@ -195,16 +201,49 @@ function setup() {
   // plant set
   tiles.push( new Tile(0,  ['AAA', 'AAA', 'AAA', 'AAA']) ); // 0,0,0,0
   tiles.push( new Tile(1,  ['ABA', 'AAA', 'AAA', 'AAA']) ); // 1,0,0,0
+  tiles.push( new Tile(1,  ['ACA', 'AAA', 'AAA', 'AAA']) ); // 1,0,0,0
   tiles.push( new Tile(2,  ['ABA', 'AAA', 'ABA', 'AAA']) ); // 1,0,1,0
   tiles.push( new Tile(3,  ['AAA', 'AAA', 'ABA', 'AAA']) ); // 0,0,1,0
   tiles.push( new Tile(4,  ['ABA', 'AAA', 'ABA', 'AAA']) ); // 1,0,1,0
   tiles.push( new Tile(5,  ['ABA', 'AAA', 'ABA', 'AAA']) ); // 1,0,1,0
   tiles.push( new Tile(6,  ['ABA', 'AAA', 'ABA', 'AAA']) ); // 1,0,1,0
-  tiles.push( new Tile(7,  ['ABA', 'AAA', 'AAA', 'ABA']) ); // 1,0,0,1
-  tiles.push( new Tile(8,  ['ABA', 'ABA', 'AAA', 'AAA']) ); // 1,1,0,0
-  tiles.push( new Tile(9,  ['ABA', 'AAA', 'ABA', 'ABA']) ); // 1,0,1,1
-  tiles.push( new Tile(10, ['ABA', 'ABA', 'ABA', 'AAA']) ); // 1,1,1,0
-  tiles.push( new Tile(11, ['ABA', 'ABA', 'ABA', 'ABA']) ); // 1,1,1,1
+  // tiles.push( new Tile(7,  ['ABA', 'AAA', 'AAA', 'ABA']) ); // 1,0,0,1
+  // tiles.push( new Tile(8,  ['ABA', 'ABA', 'AAA', 'AAA']) ); // 1,1,0,0
+  // tiles.push( new Tile(9,  ['ABA', 'AAA', 'ABA', 'ABA']) ); // 1,0,1,1
+  // tiles.push( new Tile(10, ['ABA', 'ABA', 'ABA', 'AAA']) ); // 1,1,1,0
+  // tiles.push( new Tile(11, ['ABA', 'ABA', 'ABA', 'ABA']) ); // 1,1,1,1
+  tiles.push( new Tile(12, ['ABA', 'AAA', 'AAA', 'ABA']) ); // 1,0,0,1
+  tiles.push( new Tile(13, ['ABA', 'AAA', 'ABA', 'ABA']) ); // 1,0,1,1
+  tiles.push( new Tile(14, ['ABA', 'ABA', 'ABA', 'AAA']) ); // 1,1,1,0
+  tiles.push( new Tile(15, ['ABA', 'ABA', 'AAA', 'AAA']) ); // 1,1,0,0
+
+  tiles.push( new Tile(16, ['AAA', 'AAA', 'ACA', 'AAA']) ); //
+  tiles.push( new Tile(17, ['ACA', 'AAA', 'ACA', 'AAA']) ); //
+  tiles.push( new Tile(18, ['ACA', 'AAA', 'ACA', 'ACA']) ); //
+  tiles.push( new Tile(19, ['ACA', 'ACA', 'ACA', 'AAA']) ); //
+  tiles.push( new Tile(20, ['ACA', 'ACA', 'ACA', 'ACA']) ); //
+  tiles.push( new Tile(21, ['ACA', 'ACA', 'AAA', 'AAA']) ); //
+  tiles.push( new Tile(22, ['ACA', 'AAA', 'AAA', 'ACA']) ); //
+  tiles.push( new Tile(23, ['ABA', 'ABA', 'ABA', 'ABA']) ); //
+
+  // WATER
+  tiles.push( new Tile(24, ['DDD', 'DDD', 'DDD', 'DDD']) ); //
+  tiles.push( new Tile(25, ['ADD', 'DDD', 'DDA', 'AAA']) ); //
+  tiles.push( new Tile(26, ['AAA', 'ADD', 'DDA', 'AAA']) ); //
+  tiles.push( new Tile(30, ['AAA', 'ADD', 'DDD', 'DDA']) ); //
+  tiles.push( new Tile(31, ['AAA', 'AAA', 'ADD', 'DDA']) ); //
+  tiles.push( new Tile(32, ['DDA', 'AAA', 'ADD', 'DDD']) ); //
+  tiles.push( new Tile(33, ['ADD', 'DDD', 'DDD', 'DDA']) ); //
+  tiles.push( new Tile(34, ['DDA', 'ADD', 'DDD', 'DDD']) ); //
+  tiles.push( new Tile(35, ['DDD', 'DDA', 'AAA', 'ADD']) ); //
+  tiles.push( new Tile(36, ['DDA', 'AAA', 'AAA', 'ADD']) ); //
+  tiles.push( new Tile(37, ['ADD', 'DDA', 'AAA', 'AAA']) ); //
+  tiles.push( new Tile(38, ['DDD', 'DDA', 'ADD', 'DDD']) ); //
+  tiles.push( new Tile(39, ['DDD', 'DDD', 'DDA', 'ADD']) ); //
+
+  tiles.push( new Tile(27, ['AAA', 'AAA', 'AAA', 'AAA']) ); //
+  tiles.push( new Tile(28, ['AAA', 'AAA', 'AAA', 'AAA']) ); //
+  tiles.push( new Tile(29, ['AAA', 'AAA', 'AAA', 'AAA']) ); //
 
   const ROTATIONS_ENABLED = false;
 
@@ -427,7 +466,8 @@ function collapseCellsInWindow(cells_in_window){
     for(let cell_index of cells_in_window){
       gridSubset.push(grid[cell_index])
     }
-    let pick = pickLowestEntropyRandomCell(gridSubset)
+    let pick_id = pickLowestEntropyRandomCell(gridSubset)
+    let pick = grid[pick_id]
     let valid_options = getValidOptionsForCell(pick.row,pick.col)
     if(valid_options.length){
       let picked_option = random(valid_options)
@@ -470,8 +510,16 @@ function recursivelyRecollapseRegionAroundCell(cell){
 let backtrack_window_size = 3; // start with the 9 adjacent cells
 
 function backTrackAttemptOne(cell){
-    console.log('backTrackAttemptOne',cell);
-    debugger;
+    if(!IS_BACKTRACKING){
+      IS_BACKTRACKING = true;
+      backtrack_started_at = cell.index;
+      collapsed_at_backtrack_start = collapsed.slice();
+    }else{
+      console.log('backtracking... ',collapsed.length)
+    }
+
+    // console.log('backTrackAttemptOne',cell);
+    // debugger;
     const BT_THRESHOLD = 3; //tiles.length / 3;
     let backtrack_i = 0;
     let backtrack = true
@@ -554,6 +602,7 @@ function backTrackAttemptOne(cell){
       const prev_count_for_cell = backtrack_counter?.[prev_cell.index]
 
       if(prev_cell){
+        latest_uncollapsed_cell = prev_cell.index;
         // console.log('backtracking ', {
         //   backtrack_i,
         //   index:prev_cell.index,
@@ -572,7 +621,7 @@ function backTrackAttemptOne(cell){
         }
 
         // recalculate entropy
-        updateGrid();
+        // updateGrid();
 
         // if(backtrack_counter[prev_cell.index] < BT_THRESHOLD){
           // console.warn(pick_counter[prev_cell.index]);
@@ -600,11 +649,17 @@ function pickLowestEntropyRandomCell(cells){
 
   let gridCopy = cells.slice();
   gridCopy = gridCopy.filter((a) => !a.collapsed);
+  // if(IS_BACKTRACKING){
+  //   console.log(JSON.stringify(gridCopy));
+  // }
   // Sort By remaining options (lowest entropy first)
   gridCopy.sort((a, b) => {
     return a.options.length - b.options.length;
   });
 
+  if(typeof(gridCopy) === "undefined"){
+    debugger;
+  }
   if(!gridCopy.length){
     return;
   }
@@ -621,18 +676,36 @@ function pickLowestEntropyRandomCell(cells){
 
   if (stopIndex > 0) gridCopy.splice(stopIndex);
 
+  // console.log(gridCopy,collapsed.at(-1));
   // pick a random low entropy cell
-  let cell = random(gridCopy);
-  return cell;
+  let cell_id = IS_BACKTRACKING ? gridCopy[0].index : random(gridCopy).index;
+  if(!cell_id && cell_id !== 0){
+    debugger;
+  }
+  return cell_id;
 }
 
 function updateGrid(){
   num_updates++;
+  if(IS_BACKTRACKING){
+    if(collapsed.includes(backtrack_started_at)){
+      // console.log('BACKTRACK COMPLETE');
+      // debugger;
+      IS_BACKTRACKING = false;
+      backtrack_started_at = null;
+      latest_uncollapsed_cell = null;
+      collapsed_at_backtrack_start = null;
+    }
+  }
 
-  let cell = pickLowestEntropyRandomCell(grid);
+  let cell_id = pickLowestEntropyRandomCell(grid);
+  let cell = grid[cell_id]
   // We're DONE!
   if(!cell){
     console.warn('DONE!');
+    if(IS_BACKTRACKING){
+      debugger;
+    }
     noLoop();
     needs_restart = true;
     return;
@@ -657,6 +730,9 @@ function updateGrid(){
     // noLoop();
     return;
   }
+
+
+
   // collapse the cell!
   cell.collapsed = true;
   // prev_cell_collapsed = cell.index;
