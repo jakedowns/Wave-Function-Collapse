@@ -1,5 +1,10 @@
+let prev_set = localStorage.getItem('selected_set');
+if(prev_set){
+  document.getElementById('set_selector').value = prev_set;
+}
+let selected_set_key = document.getElementById('set_selector').value;
 let tiles = [];
-const tileImages = [];
+let tileImages = [];
 
 let grid = [];
 let IS_BACKTRACKING = false
@@ -11,11 +16,12 @@ let SHOW_ENTROPY = false;
 
 // seamless mode
 let DEFAULT_EMPTY_OPTIONS_ARRAY = [];
+// TODO: make user alterable // responsive // support non-grid
 width = 800
 height = 800
 
 let prev_seamless = JSON.parse(localStorage.getItem('seamless')) ?? false
-console.log({prev_seamless})
+// console.log({prev_seamless})
 document.getElementById('seamless').toggleAttribute('checked',prev_seamless)
 let WRAP_AROUND = document.getElementById('seamless').checked;
 
@@ -27,7 +33,8 @@ let GLOBAL_DELAY = parseInt(document.getElementById('delay').value);
 
 let prev_dim = localStorage.getItem('tile-size');
 if(prev_dim){
-  document.getElementById('tile-size').value = prev_dim;
+  prev_dim = JSON.parse(prev_dim);
+  document.getElementById('tile-size').value = prev_dim < 256 ? prev_dim : 256;
 }
 
 let DIM = document.getElementById('tile-size').value;
@@ -54,6 +61,16 @@ document.getElementById('seamless').addEventListener('change', function(event) {
   startOver();
 });
 
+document.getElementById('set_selector').addEventListener('change', function(event) {
+  selected_set_key = event.target.value;
+  localStorage.setItem('selected_set', selected_set_key);
+  selected_set = tile_sets?.[selected_set_key] ?? tile_sets.plants
+  loadTiles();
+  startOver();
+});
+
+let ROTATIONS_ENABLED = false;
+
 let needs_restart = false;
 // let prev_cell_collapsed = null;
 
@@ -64,32 +81,32 @@ let backtrack_counter = {}
 // let pick_counter = {}
 let did_last_draw = false;
 
+let tile_sets = {
+  squiggles: {
+    max_id: 62,
+    path: 'jake',
+  },
+  plants: {
+    max_id: 39,
+    path: 'plants',
+  },
+  circuits: {
+    max_id: 7,
+    path: 'circuit-coding-train'
+  },
+  tracks: {
+    max_id: 6,
+    path: 'rail'
+  }
+}
+
+let selected_set = tile_sets?.[selected_set_key] ?? tile_sets.plants;
+
 function preload() {
   // const path = 'rail';
   // for (let i = 0; i < 7; i++) {
   //   tileImages[i] = loadImage(`${path}/tile${i}.png`);
   // }
-
-  let tile_sets = {
-    squiggles: {
-      max_id: 62,
-      path: 'jake',
-    },
-    plants: {
-      max_id: 39,
-      path: 'plants',
-    },
-    circuits: {
-      max_id: 7,
-      path: 'circuit-coding-train'
-    }
-  }
-
-  const selected_set = tile_sets.plants;
-  const path = `tiles/${selected_set.path}`;
-  for (let i = 0; i <= selected_set.max_id; i++) {
-    tileImages[i] = loadImage(`${path}/${i}.png`);
-  }
 }
 
 function removeDuplicatedTiles(tiles) {
@@ -101,6 +118,33 @@ function removeDuplicatedTiles(tiles) {
   return Object.values(uniqueTilesMap);
 }
 
+function loadTiles(){
+  tiles = [];
+  tileImages = [];
+  loadTileImages();
+  switch(selected_set_key){
+    case 'plants':
+      ROTATIONS_ENABLED = false
+      LOAD_PLANTS_SET();
+    break;
+    case 'squiggles':
+      ROTATIONS_ENABLED = true
+      LOAD_SQUIGGLE_SET();
+    break;
+    case 'circuits':
+      ROTATIONS_ENABLED = true
+      LOAD_CIRCUIT_SET();
+    break;
+  }
+}
+
+function loadTileImages(){
+  const path = `tiles/${selected_set.path}`;
+  for (let i = 0; i <= selected_set.max_id; i++) {
+    tileImages[i] = loadImage(`${path}/${i}.png`);
+  }
+}
+
 let seed = 1;
 function setup() {
   pixelDensity(4);
@@ -110,142 +154,7 @@ function setup() {
 
   randomSeed(seed);
 
-  // tiles[0] = new Tile(tileImages[0], ['AAA', 'AAA', 'AAA', 'AAA']);
-  // tiles[1] = new Tile(tileImages[1], ['ABA', 'ABA', 'ABA', 'AAA']);
-  // tiles[2] = new Tile(tileImages[2], ['BAA', 'AAB', 'AAA', 'AAA']);
-  // tiles[3] = new Tile(tileImages[3], ['BAA', 'AAA', 'AAB', 'AAA']);
-  // tiles[4] = new Tile(tileImages[4], ['ABA', 'ABA', 'AAA', 'AAA']);
-  // tiles[5] = new Tile(tileImages[5], ['ABA', 'AAA', 'ABA', 'AAA']);
-  // tiles[6] = new Tile(tileImages[6], ['ABA', 'ABA', 'ABA', 'ABA']);
-
-  // Loaded and created the tiles
-  // tiles[0] = new Tile(tileImages[0], ['AAA', 'AAA', 'AAA', 'AAA']);
-  // tiles[1] = new Tile(tileImages[1], ['BBB', 'BBB', 'BBB', 'BBB']);
-  // tiles[2] = new Tile(tileImages[2], ['BBB', 'BCB', 'BBB', 'BBB']);
-  // tiles[3] = new Tile(tileImages[3], ['BBB', 'BDB', 'BBB', 'BDB']);
-  // tiles[4] = new Tile(tileImages[4], ['ABB', 'BCB', 'BBA', 'AAA']);
-  // tiles[5] = new Tile(tileImages[5], ['ABB', 'BBB', 'BBB', 'BBA']);
-  // tiles[6] = new Tile(tileImages[6], ['BBB', 'BCB', 'BBB', 'BCB']);
-  // tiles[7] = new Tile(tileImages[7], ['BDB', 'BCB', 'BDB', 'BCB']);
-  // tiles[8] = new Tile(tileImages[8], ['BDB', 'BBB', 'BCB', 'BBB']);
-  // tiles[9] = new Tile(tileImages[9], ['BCB', 'BCB', 'BBB', 'BCB']);
-  // tiles[10] = new Tile(tileImages[10], ['BCB', 'BCB', 'BCB', 'BCB']);
-  // tiles[11] = new Tile(tileImages[11], ['BCB', 'BCB', 'BBB', 'BBB']);
-  // tiles[12] = new Tile(tileImages[12], ['BBB', 'BCB', 'BBB', 'BCB']);
-
-  // squiggle set:
-  // tiles.push( new Tile(0, ['AAA', 'AAA', 'AAA', 'AAA']) );
-  // tiles.push( new Tile(1, ['ABA', 'AAA', 'AAA', 'ABA']) );
-  // tiles.push( new Tile(2, ['ABA', 'ABA', 'ABA', 'ABA']) );
-  // tiles.push( new Tile(3, ['AAB', 'BAA', 'AAB', 'BAA']) );
-  // tiles.push( new Tile(4, ['BAC', 'CAB', 'BAC', 'CAB']) );
-  // tiles.push( new Tile(5, ['BAC', 'CAB', 'BAC', 'CAB']) );
-  // tiles.push( new Tile(6, ['BAC', 'CAC', 'CAB', 'BAB']) );
-  // tiles.push( new Tile(7, ['BAA', 'AAA', 'AAB', 'BAB']) );
-  // tiles.push( new Tile(8, ['CAA', 'AAA', 'AAC', 'CAC']) );
-  // tiles.push( new Tile(9, ['ABA', 'AAA', 'AAB', 'BAA']) );
-  // tiles.push( new Tile(10, ['ABA', 'AAC', 'CAB', 'BAA']) );
-  // tiles.push( new Tile(11, ['ABA', 'ABA', 'AAA', 'ABA']) );
-  // tiles.push( new Tile(12, ['ABA', 'ABB', 'BAB', 'BBA']) );
-  // tiles.push( new Tile(13, ['BBB', 'BBB', 'BBB', 'BBB']) );
-  // tiles.push( new Tile(14, ['ABA', 'AAB', 'BAB', 'BAA']) );
-  // tiles.push( new Tile(15, ['BAA', 'AAA', 'AAA', 'AAB']) );
-  // tiles.push( new Tile(16, ['BAA', 'AAB', 'BAA', 'AAB']) );
-  // tiles.push( new Tile(17, ['BAA', 'AAB', 'BAB', 'BAB']) );
-  // tiles.push( new Tile(18, ['BAB', 'BAB', 'BAB', 'BAB']) );
-  // tiles.push( new Tile(19, ['BAB', 'BAB', 'BAB', 'BAB']) );
-  // tiles.push( new Tile(20, ['ABA', 'AAA', 'AAB', 'BBA']) );
-  // tiles.push( new Tile(21, ['BBA', 'AAA', 'ABB', 'BBB']) );
-  // tiles.push( new Tile(22, ['BBA', 'AAA', 'ABB', 'BBB']) );
-  // tiles.push( new Tile(23, ['BBA', 'AAA', 'AAA', 'ABB']) );
-  // tiles.push( new Tile(24, ['ABA', 'AAA', 'AAA', 'ABA']) );
-  // // tiles.push( new Tile(25, ['BBA', 'AAA', 'AAA', 'AAA']) );
-  // tiles.push( new Tile(26, ['ABA', 'ABA', 'ABA', 'ABA']) );
-  // tiles.push( new Tile(27, ['ABA', 'ACA', 'ABA', 'ACA']) );
-  // tiles.push( new Tile(28, ['ACA', 'ACA', 'ACA', 'ACA']) );
-  // tiles.push( new Tile(29, ['ACA', 'ABA', 'ACA', 'ABA']) );
-  // tiles.push( new Tile(30, ['ACA', 'AAA', 'ACA', 'AAA']) );
-  // tiles.push( new Tile(31, ['ABA', 'AAA', 'ABA', 'AAA']) );
-  // tiles.push( new Tile(32, ['AAC', 'AAA', 'AAC', 'AAA']) );
-  // tiles.push( new Tile(33, ['CAC', 'CAC', 'CAC', 'CAC']) );
-  // tiles.push( new Tile(34, ['ACA', 'ACA', 'ACA', 'ACA']) );
-  // tiles.push( new Tile(35, ['ACA', 'AAA', 'AAA', 'ACA']) );
-  // tiles.push( new Tile(36, ['ACA', 'ACA', 'ACA', 'ACA']) );
-  // tiles.push( new Tile(37, ['ABA', 'ABA', 'ABA', 'ABA']) );
-  // tiles.push( new Tile(38, ['BAB', 'BAB', 'BAB', 'BAB']) );
-  // tiles.push( new Tile(39, ['CAC', 'CAC', 'CAC', 'CAC']) );
-  // tiles.push( new Tile(40, ['ABA', 'AAB', 'BBB', 'BAA']) );
-  // tiles.push( new Tile(41, ['ABA', 'AAA', 'BCB', 'AAA']) );
-  // tiles.push( new Tile(42, ['ACA', 'AAA', 'CBC', 'AAA']) );
-  // tiles.push( new Tile(43, ['ACA', 'AAA', 'CCC', 'AAA']) );
-  // tiles.push( new Tile(44, ['CCC', 'AAA', 'CCC', 'AAA']) );
-  // tiles.push( new Tile(45, ['BBB', 'AAA', 'BBB', 'AAA']) );
-  // tiles.push( new Tile(46, ['BAA', 'AAA', 'AAB', 'AAA']) );
-  // tiles.push( new Tile(47, ['BAB', 'AAA', 'BAB', 'AAA']) );
-  // tiles.push( new Tile(48, ['AAA', 'BAA', 'AAA', 'AAB']) );
-  // tiles.push( new Tile(49, ['AAA', 'BAA', 'AAA', 'AAB']) );
-  // tiles.push( new Tile(50, ['ABA', 'AAA', 'ABA', 'AAA']) );
-  // tiles.push( new Tile(51, ['ABA', 'AAA', 'ABA', 'AAA']) );
-  // tiles.push( new Tile(52, ['ABA', 'AAA', 'ABA', 'AAA']) );
-  // tiles.push( new Tile(53, ['CCC', 'ABA', 'CCC', 'ABA']) );
-  // tiles.push( new Tile(54, ['CCC', 'ABA', 'CCC', 'ABA']) );
-  // tiles.push( new Tile(55, ['CCC', 'CCC', 'AAA', 'AAA']) );
-  // tiles.push( new Tile(56, ['CCC', 'CAC', 'CCA', 'AAA']) );
-  // tiles.push( new Tile(57, ['AAC', 'CAA', 'AAA', 'AAA']) );
-  // tiles.push( new Tile(58, ['CAC', 'CAA', 'AAA', 'AAA']) );
-  // tiles.push( new Tile(59, ['AAA', 'CCC', 'AAA', 'ABA']) );
-  // tiles.push( new Tile(60, ['AAA', 'CAC', 'AAA', 'ABA']) );
-  // tiles.push( new Tile(61, ['CCC', 'AAA', 'CAC', 'AAA']) );
-  // tiles.push( new Tile(62, ['CCC', 'AAA', 'CAC', 'AAA']) );
-
-  // plant set
-  tiles.push( new Tile(0,  ['AAA', 'AAA', 'AAA', 'AAA']) ); // 0,0,0,0
-  tiles.push( new Tile(1,  ['ABA', 'AAA', 'AAA', 'AAA']) ); // 1,0,0,0
-  tiles.push( new Tile(1,  ['ACA', 'AAA', 'AAA', 'AAA']) ); // 1,0,0,0
-  tiles.push( new Tile(2,  ['ABA', 'AAA', 'ABA', 'AAA']) ); // 1,0,1,0
-  tiles.push( new Tile(3,  ['AAA', 'AAA', 'ABA', 'AAA']) ); // 0,0,1,0
-  tiles.push( new Tile(4,  ['ABA', 'AAA', 'ABA', 'AAA']) ); // 1,0,1,0
-  tiles.push( new Tile(5,  ['ABA', 'AAA', 'ABA', 'AAA']) ); // 1,0,1,0
-  tiles.push( new Tile(6,  ['ABA', 'AAA', 'ABA', 'AAA']) ); // 1,0,1,0
-  // tiles.push( new Tile(7,  ['ABA', 'AAA', 'AAA', 'ABA']) ); // 1,0,0,1
-  // tiles.push( new Tile(8,  ['ABA', 'ABA', 'AAA', 'AAA']) ); // 1,1,0,0
-  // tiles.push( new Tile(9,  ['ABA', 'AAA', 'ABA', 'ABA']) ); // 1,0,1,1
-  // tiles.push( new Tile(10, ['ABA', 'ABA', 'ABA', 'AAA']) ); // 1,1,1,0
-  // tiles.push( new Tile(11, ['ABA', 'ABA', 'ABA', 'ABA']) ); // 1,1,1,1
-  tiles.push( new Tile(12, ['ABA', 'AAA', 'AAA', 'ABA']) ); // 1,0,0,1
-  tiles.push( new Tile(13, ['ABA', 'AAA', 'ABA', 'ABA']) ); // 1,0,1,1
-  tiles.push( new Tile(14, ['ABA', 'ABA', 'ABA', 'AAA']) ); // 1,1,1,0
-  tiles.push( new Tile(15, ['ABA', 'ABA', 'AAA', 'AAA']) ); // 1,1,0,0
-
-  tiles.push( new Tile(16, ['AAA', 'AAA', 'ACA', 'AAA']) ); //
-  tiles.push( new Tile(17, ['ACA', 'AAA', 'ACA', 'AAA']) ); //
-  tiles.push( new Tile(18, ['ACA', 'AAA', 'ACA', 'ACA']) ); //
-  tiles.push( new Tile(19, ['ACA', 'ACA', 'ACA', 'AAA']) ); //
-  tiles.push( new Tile(20, ['ACA', 'ACA', 'ACA', 'ACA']) ); //
-  tiles.push( new Tile(21, ['ACA', 'ACA', 'AAA', 'AAA']) ); //
-  tiles.push( new Tile(22, ['ACA', 'AAA', 'AAA', 'ACA']) ); //
-  tiles.push( new Tile(23, ['ABA', 'ABA', 'ABA', 'ABA']) ); //
-
-  // WATER
-  tiles.push( new Tile(24, ['DDD', 'DDD', 'DDD', 'DDD']) ); //
-  tiles.push( new Tile(25, ['ADD', 'DDD', 'DDA', 'AAA']) ); //
-  tiles.push( new Tile(26, ['AAA', 'ADD', 'DDA', 'AAA']) ); //
-  tiles.push( new Tile(30, ['AAA', 'ADD', 'DDD', 'DDA']) ); //
-  tiles.push( new Tile(31, ['AAA', 'AAA', 'ADD', 'DDA']) ); //
-  tiles.push( new Tile(32, ['DDA', 'AAA', 'ADD', 'DDD']) ); //
-  tiles.push( new Tile(33, ['ADD', 'DDD', 'DDD', 'DDA']) ); //
-  tiles.push( new Tile(34, ['DDA', 'ADD', 'DDD', 'DDD']) ); //
-  tiles.push( new Tile(35, ['DDD', 'DDA', 'AAA', 'ADD']) ); //
-  tiles.push( new Tile(36, ['DDA', 'AAA', 'AAA', 'ADD']) ); //
-  tiles.push( new Tile(37, ['ADD', 'DDA', 'AAA', 'AAA']) ); //
-  tiles.push( new Tile(38, ['DDD', 'DDA', 'ADD', 'DDD']) ); //
-  tiles.push( new Tile(39, ['DDD', 'DDD', 'DDA', 'ADD']) ); //
-
-  tiles.push( new Tile(27, ['AAA', 'AAA', 'AAA', 'AAA']) ); //
-  tiles.push( new Tile(28, ['AAA', 'AAA', 'AAA', 'AAA']) ); //
-  tiles.push( new Tile(29, ['AAA', 'AAA', 'AAA', 'AAA']) ); //
-
-  const ROTATIONS_ENABLED = false;
+  loadTiles();
 
   for (let i = 0; i < tiles.length; i++) {
     tiles[i].index = i;

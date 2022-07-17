@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <meta name="viewport" content="width=device-width">
+    <meta name="viewport" content="initial-scale=1.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <meta charset="utf-8" />
     <title>Wave Function Collapse</title>
@@ -34,22 +36,28 @@
 
   <body>
     <div id="app">
+      <h3>Wave Function Collapse Image Generator</h3>
+      <p>by <a href="https://twitter.com/jakedowns">@jakedowns</a></p>
     <div id="controls">
       <button onclick="startOver();">restart</button>
       <label>TileSet</label>
-      <select id="tileset-picker">
-        <option selected value="plant">Plant</option>
+      <select id="set_selector">
+        <option selected value="plant">Desert Oasis</option>
         <option value="squiggles">Squiggles</option>
+        <option value="circuit">Circuit</option>
+        <option value="tracks">Rail</option>
       </select>
       <label for="">tile size</label>
-      <input type="number" step="2" min="4" max="256" id="tile-size" value="16" />
+      <input type="number" step="2" min="4" max="256" id="tile-size" value="8" />
       <label for="">delay</label>
       <input type="number" step=".1" min="0" max="10" id="delay" value="0" />
       <label for="">seamless mode</label>
       <input type="checkbox" id="seamless" />
     </div>
     <main></main>
-    <p>forked version of TheCodingTrain's <a href="https://github.com/CodingTrain/Wave-Function-Collapse">Wave Function Collapse Coding Challenge Repo</a>. Made with P5.js</p>
+    <h3>Credits:</h3>
+    <p>Original Source Code: The Coding Train's <a href="https://github.com/CodingTrain/Wave-Function-Collapse">Wave Function Collapse Coding Challenge</a>. Made with P5.js</p>
+    <p>Tiles made with <a href="https://www.pixilart.com/">PixilArt.com</a></p>
     </div>
     <script src="tile.js"></script>
     <script src="cell.js"></script>
