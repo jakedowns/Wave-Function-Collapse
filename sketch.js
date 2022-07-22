@@ -26,6 +26,18 @@ let tile_sets = {
   tracks: {
     max_id: 6,
     path: 'rail/tile'
+  },
+  monsters: {
+    max_id: 4,
+    path: 'monsters/'
+  },
+  pipes: {
+    max_id: 1,
+    path: 'pipes/'
+  },
+  pipes2: {
+    max_id: 6,
+    path: 'pipes2/'
   }
 }
 
@@ -72,6 +84,18 @@ function loadTiles(){
       ROTATIONS_ENABLED = true
       LOAD_TRACKS_SET();
     break;
+    case 'monsters':
+      ROTATIONS_ENABLED = false
+      LOAD_MONSTERS_SET();
+    break;
+    case 'pipes':
+      ROTATIONS_ENABLED = true
+      LOAD_PIPES_SET();
+    break;
+    case 'pipes2':
+      ROTATIONS_ENABLED = true // TODO: per tile rotation settings
+      LOAD_PIPES2_SET();
+    break;
     default:
       console.error('failed to load tiles!',selected_set_key);
     break;
@@ -92,6 +116,11 @@ function loadTiles(){
     for (let i = 0; i < initialTileCount; i++) {
       let tempTiles = [];
       for (let j = 0; j < 4; j++) {
+        if(selected_set_key === 'pipes2'){
+          if([1,4,5,6].includes(i)){
+            continue;
+          }
+        }
         tempTiles.push(tiles[i].rotate(j));
       }
       // TODO: make this a per-set option or a user choice
